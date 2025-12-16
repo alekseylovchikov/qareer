@@ -43,6 +43,8 @@ const schema = i.schema({
       name: i.string().optional(),
       title: i.string().optional(),
       summary: i.string().optional(),
+      resumeUrl: i.string().optional(),
+      resumeName: i.string().optional(),
       userId: i.string().unique(), // One profile per user
     }),
   },

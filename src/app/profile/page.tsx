@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 import {
@@ -21,6 +22,8 @@ export default function ProfilePage() {
     },
   });
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const profile = data?.profiles?.[0] || {};
 
   if (authLoading || dataLoading)
@@ -30,7 +33,6 @@ export default function ProfilePage() {
     if (!user) return;
     const name = formData.get("name") as string;
     const title = formData.get("title") as string;
-    const email = formData.get("email") as string; // We might not want to update auth email here easily, but can store in profile for display
     const summary = formData.get("summary") as string;
 
     const profileId = data?.profiles?.[0]?.id || id();
@@ -43,6 +45,41 @@ export default function ProfilePage() {
         userId: user.id,
       })
     );
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    try {
+      // Path: resumes/USER_ID/FILENAME
+      const path = `resumes/${user.id}/${file.name}`;
+      await db.storage.uploadFile(path, file);
+      const url = await db.storage.getDownloadUrl(path);
+
+      const profileId = data?.profiles?.[0]?.id || id();
+      db.transact(
+        db.tx.profiles[profileId].update({
+          resumeUrl: url,
+          resumeName: file.name,
+          userId: user.id,
+        })
+      );
+    } catch (error) {
+      console.error("Upload failed", error);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function deleteResume() {
+    if (!profile.id) return;
+    db.transact(
+      db.tx.profiles[profile.id].update({ resumeUrl: null, resumeName: null })
+    );
+    // Ideally delete from storage too, but simple unlink is fine for now
   }
 
   return (
@@ -79,10 +116,10 @@ export default function ProfilePage() {
 
             <Input
               name="email"
-              label="Email Address" // Assuming email is editable for this stub
+              label="Email Address"
               defaultValue={user?.email || ""}
               placeholder="john@example.com"
-              disabled // Keep read-only relative to auth usually
+              disabled
             />
 
             <div>
@@ -105,16 +142,59 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Resume Section Placeholder - in a real app this would be a file upload or rich editor */}
       <Card>
         <CardHeader>
           <CardTitle>Resume</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Resume upload functionality coming soon.
-            </p>
+            {profile.resumeUrl ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+                  <span className="text-sm font-medium">
+                    {profile.resumeName || "Resume.pdf"}
+                  </span>
+                  <a
+                    href={profile.resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
+                    Download
+                  </a>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={deleteResume}
+                  className="text-red-500"
+                >
+                  Remove Resume
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Upload your resume (PDF)
+                </p>
+                <label className="inline-block">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                  />
+                  <span
+                    className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 cursor-pointer ${
+                      isUploading ? "opacity-50" : ""
+                    }`}
+                  >
+                    {isUploading ? "Uploading..." : "Select File"}
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
