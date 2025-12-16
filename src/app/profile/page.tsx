@@ -1,4 +1,6 @@
-import { getUserProfile, updateUserProfile } from "@/app/actions/profile";
+"use client";
+
+import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 import {
   Card,
@@ -7,9 +9,41 @@ import {
   CardTitle,
 } from "@/app/components/ui/Card";
 import { Input } from "@/app/components/ui/Input";
+import { id } from "@instantdb/react";
 
-export default async function ProfilePage() {
-  const user = await getUserProfile();
+export default function ProfilePage() {
+  const { user, isLoading: authLoading } = db.useAuth();
+  const { data, isLoading: dataLoading } = db.useQuery({
+    profiles: {
+      $: {
+        where: { userId: user?.id },
+      },
+    },
+  });
+
+  const profile = data?.profiles?.[0] || {};
+
+  if (authLoading || dataLoading)
+    return <div className="p-8">Loading profile...</div>;
+
+  function handleUpdateProfile(formData: FormData) {
+    if (!user) return;
+    const name = formData.get("name") as string;
+    const title = formData.get("title") as string;
+    const email = formData.get("email") as string; // We might not want to update auth email here easily, but can store in profile for display
+    const summary = formData.get("summary") as string;
+
+    const profileId = data?.profiles?.[0]?.id || id();
+
+    db.transact(
+      db.tx.profiles[profileId].update({
+        name,
+        title,
+        summary,
+        userId: user.id,
+      })
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -27,18 +61,18 @@ export default async function ProfilePage() {
           <CardTitle>Personal Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateUserProfile} className="space-y-6">
+          <form action={handleUpdateProfile} className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               <Input
                 name="name"
                 label="Full Name"
-                defaultValue={user.name || ""}
+                defaultValue={profile.name || ""}
                 placeholder="e.g. John Doe"
               />
               <Input
                 name="title"
                 label="Job Title"
-                defaultValue={user.title || ""}
+                defaultValue={profile.title || ""}
                 placeholder="e.g. Senior Frontend Engineer"
               />
             </div>
@@ -46,8 +80,9 @@ export default async function ProfilePage() {
             <Input
               name="email"
               label="Email Address" // Assuming email is editable for this stub
-              defaultValue={user.email || ""}
+              defaultValue={user?.email || ""}
               placeholder="john@example.com"
+              disabled // Keep read-only relative to auth usually
             />
 
             <div>
@@ -58,7 +93,7 @@ export default async function ProfilePage() {
                 name="summary"
                 rows={4}
                 className="flex w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                defaultValue={user.summary || ""}
+                defaultValue={profile.summary || ""}
                 placeholder="Briefly describe your experience and goals..."
               />
             </div>

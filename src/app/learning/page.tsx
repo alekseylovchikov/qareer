@@ -1,10 +1,6 @@
-import {
-  addSkill,
-  addLearningGoal,
-  getSkills,
-  toggleGoalCompletion,
-  deleteSkill,
-} from "@/app/actions/learning";
+"use client";
+
+import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 import {
   Card,
@@ -14,9 +10,70 @@ import {
 } from "@/app/components/ui/Card";
 import { Input } from "@/app/components/ui/Input";
 import { Trash2, CheckCircle, Circle } from "lucide-react";
+import { id } from "@instantdb/react";
 
-export default async function LearningPage() {
-  const skills = await getSkills();
+export default function LearningPage() {
+  const { user, isLoading: authLoading } = db.useAuth();
+  const { data, isLoading: dataLoading } = db.useQuery({
+    skills: {
+      $: {
+        where: { userId: user?.id },
+      },
+      learningGoals: {},
+    },
+  });
+
+  const skills = data?.skills || [];
+
+  if (authLoading || dataLoading)
+    return <div className="p-8">Loading learning track...</div>;
+
+  function handleAddSkill(formData: FormData) {
+    if (!user) return;
+    const name = formData.get("name") as string;
+    const currentLevel = formData.get("currentLevel") as string;
+    const targetLevel = formData.get("targetLevel") as string;
+    const priority = parseInt(formData.get("priority") as string);
+
+    db.transact(
+      db.tx.skills[id()].update({
+        name,
+        currentLevel,
+        targetLevel,
+        priority,
+        userId: user.id,
+      })
+    );
+  }
+
+  function handleDeleteSkill(skillId: string) {
+    if (confirm("Delete this skill?")) {
+      db.transact(db.tx.skills[skillId].delete());
+    }
+  }
+
+  function handleAddGoal(formData: FormData) {
+    if (!user) return;
+    const skillId = formData.get("skillId") as string;
+    const title = formData.get("title") as string;
+
+    const goalId = id();
+    db.transact(
+      db.tx.learningGoals[goalId]
+        .update({
+          title,
+          isCompleted: false,
+          userId: user.id,
+        })
+        .link({ skill: skillId })
+    );
+  }
+
+  function handleToggleGoal(goalId: string, currentStatus: boolean) {
+    db.transact(
+      db.tx.learningGoals[goalId].update({ isCompleted: !currentStatus })
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -36,7 +93,7 @@ export default async function LearningPage() {
         </CardHeader>
         <CardContent>
           <form
-            action={addSkill}
+            action={handleAddSkill}
             className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
           >
             <div className="md:col-span-4">
@@ -108,19 +165,14 @@ export default async function LearningPage() {
                     </span>
                   </div>
                 </div>
-                <form
-                  action={async () => {
-                    "use server";
-                    await deleteSkill(skill.id);
-                  }}
+                <Button
+                  onClick={() => handleDeleteSkill(skill.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-zinc-400 hover:text-red-500 transition-colors p-1"
                 >
-                  <button
-                    type="submit"
-                    className="text-zinc-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </form>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
@@ -128,29 +180,24 @@ export default async function LearningPage() {
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   Goals
                 </h4>
-                {skill.learningGoals.map((goal) => (
+                {skill.learningGoals?.map((goal: any) => (
                   <div key={goal.id} className="flex items-start gap-2 group">
-                    <form
-                      action={async () => {
-                        "use server";
-                        await toggleGoalCompletion(goal.id, goal.isCompleted);
-                      }}
+                    <button
+                      onClick={() =>
+                        handleToggleGoal(goal.id, goal.isCompleted)
+                      }
+                      className={`mt-0.5 ${
+                        goal.isCompleted
+                          ? "text-green-500"
+                          : "text-zinc-300 hover:text-zinc-400"
+                      }`}
                     >
-                      <button
-                        type="submit"
-                        className={`mt-0.5 ${
-                          goal.isCompleted
-                            ? "text-green-500"
-                            : "text-zinc-300 hover:text-zinc-400"
-                        }`}
-                      >
-                        {goal.isCompleted ? (
-                          <CheckCircle className="w-4 h-4" />
-                        ) : (
-                          <Circle className="w-4 h-4" />
-                        )}
-                      </button>
-                    </form>
+                      {goal.isCompleted ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <Circle className="w-4 h-4" />
+                      )}
+                    </button>
                     <span
                       className={`text-sm ${
                         goal.isCompleted
@@ -162,13 +209,13 @@ export default async function LearningPage() {
                     </span>
                   </div>
                 ))}
-                {skill.learningGoals.length === 0 && (
+                {(!skill.learningGoals || skill.learningGoals.length === 0) && (
                   <p className="text-xs text-zinc-400 italic">No goals set.</p>
                 )}
               </div>
 
               <div className="mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <form action={addLearningGoal} className="flex gap-2">
+                <form action={handleAddGoal} className="flex gap-2">
                   <input type="hidden" name="skillId" value={skill.id} />
                   <Input
                     name="title"
