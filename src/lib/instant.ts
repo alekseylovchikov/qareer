@@ -57,11 +57,11 @@ const schema = i.schema({
   },
 });
 
-if (!process.env.APP_ID) {
-  throw new Error("APP_ID is not defined");
+if (!process.env.NEXT_PUBLIC_APP_ID) {
+  throw new Error("process.env.NEXT_PUBLIC_APP_ID is not defined");
 }
 
 export const db = init({
-  appId: process.env.APP_ID,
+  appId: process.env.NEXT_PUBLIC_APP_ID,
   schema,
 });
