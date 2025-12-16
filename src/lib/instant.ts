@@ -2,9 +2,6 @@
 
 import { init, i } from "@instantdb/react";
 
-// App ID provided by user
-const APP_ID = "9dcbcd72-ce2b-4561-a5fa-24e7ae8f4a8d";
-
 // Define Schema
 // We infer schema from our usage, but defining it gives us type safety.
 const schema = i.schema({
@@ -60,4 +57,11 @@ const schema = i.schema({
   },
 });
 
-export const db = init({ appId: APP_ID, schema });
+if (!process.env.NEXT_PUBLIC_INSTANT_APP_ID) {
+  throw new Error("NEXT_PUBLIC_INSTANT_APP_ID is not defined");
+}
+
+export const db = init({
+  appId: process.env.NEXT_PUBLIC_INSTANT_APP_ID,
+  schema,
+});
