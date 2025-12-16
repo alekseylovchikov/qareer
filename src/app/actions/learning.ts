@@ -2,9 +2,15 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 
 export async function getSkills() {
-  const user = await prisma.user.findFirst();
+  const session = await auth();
+  if (!session?.user?.email) return [];
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
   if (!user) return [];
 
   return await prisma.skill.findMany({
@@ -15,7 +21,12 @@ export async function getSkills() {
 }
 
 export async function addSkill(formData: FormData) {
-  const user = await prisma.user.findFirst();
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
   if (!user) throw new Error("User not found");
 
   const name = formData.get("name") as string;

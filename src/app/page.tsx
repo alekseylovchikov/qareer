@@ -8,8 +8,15 @@ import {
 import Link from "next/link";
 import { Briefcase, GraduationCap, Calendar, ArrowRight } from "lucide-react";
 
+import { auth } from "@/auth";
+
 async function getDashboardStats() {
-  const user = await prisma.user.findFirst();
+  const session = await auth();
+  if (!session?.user?.email) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
   if (!user) return null;
 
   const activeJobs = await prisma.jobVacancy.count({
@@ -66,12 +73,12 @@ export default async function DashboardPage() {
   if (!stats) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <h2 className="text-xl font-semibold">Welcome to JobTracker</h2>
+        <h2 className="text-xl font-semibold">Please Log In</h2>
         <p className="text-zinc-500">
-          Please complete your profile to get started.
+          You need to be logged in to view your dashboard.
         </p>
-        <Link href="/profile" className="text-indigo-600 hover:underline">
-          Go to Profile &rarr;
+        <Link href="/login" className="text-indigo-600 hover:underline">
+          Go to Login &rarr;
         </Link>
       </div>
     );

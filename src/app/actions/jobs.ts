@@ -3,10 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { JobStatus } from "@/lib/types";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 
 export async function getJobs() {
-  const user = await prisma.user.findFirst();
-  if (!user) return []; // Should handle creating user if not exists or auth redirect
+  const session = await auth();
+  if (!session?.user?.email) return [];
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  if (!user) return [];
 
   return await prisma.jobVacancy.findMany({
     where: { userId: user.id },
@@ -16,7 +22,12 @@ export async function getJobs() {
 }
 
 export async function addJob(formData: FormData) {
-  const user = await prisma.user.findFirst();
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Unauthorized");
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
   if (!user) throw new Error("User not found");
 
   const title = formData.get("title") as string;
@@ -55,8 +66,8 @@ export async function deleteJob(jobId: string) {
 }
 
 export async function getJob(jobId: string) {
-  const user = await prisma.user.findFirst();
-  if (!user) return null;
+  const session = await auth();
+  if (!session?.user?.email) return null;
 
   return await prisma.jobVacancy.findUnique({
     where: { id: jobId },
