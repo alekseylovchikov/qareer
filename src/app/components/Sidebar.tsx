@@ -4,10 +4,11 @@ import Link from "next/link";
 import { SignOutButton } from "./SignOutButton";
 import { usePathname } from "next/navigation";
 import { Briefcase, GraduationCap, User, LayoutDashboard } from "lucide-react";
+import { db } from "@/lib/instant";
 
 export function Sidebar() {
   const pathname = usePathname();
-
+  const { user } = db.useAuth();
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/jobs", label: "Jobs", icon: Briefcase },
@@ -42,16 +43,18 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-        <Link
-          href="/profile"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-500 transition-all hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-        >
-          <User className="h-4 w-4" />
-          Profile
-        </Link>
-        <SignOutButton />
-      </div>
+      {Boolean(user) && (
+        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+          <Link
+            href="/profile"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-500 transition-all hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+          >
+            <User className="h-4 w-4" />
+            Profile
+          </Link>
+          <SignOutButton />
+        </div>
+      )}
     </div>
   );
 }

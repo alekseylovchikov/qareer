@@ -6,15 +6,10 @@ import { useRouter } from "next/navigation";
 
 export function SignOutButton() {
   const router = useRouter();
-  const { user } = db.useAuth();
 
   async function handleSignOut() {
     await db.auth.signOut();
     router.refresh();
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (
