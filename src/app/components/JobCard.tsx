@@ -12,6 +12,7 @@ import {
 import { JobStatus } from "@/lib/types";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { useTransition } from "react";
+import Link from "next/link";
 
 // Assuming Job type structure based on usage in page.tsx
 // Ideally we should import the Job type from Prisma client or types file if available.
@@ -35,7 +36,9 @@ export function JobCard({ job }: { job: Job }) {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base">{job.title}</CardTitle>
+            <Link href={`/jobs/${job.id}`} className="hover:underline">
+              <CardTitle className="text-base">{job.title}</CardTitle>
+            </Link>
             <p className="text-sm text-zinc-500 font-medium">{job.company}</p>
           </div>
           <Badge status={job.status as JobStatus} />

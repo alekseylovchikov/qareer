@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/Card";
 import { Input } from "@/app/components/ui/Input";
-import { ArrowLeft, Trash2, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
