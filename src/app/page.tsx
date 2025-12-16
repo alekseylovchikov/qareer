@@ -1,14 +1,16 @@
 "use client";
 
-import { db } from "@/lib/instant";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/Card";
+import { db } from "@/lib/instant";
+import { ArrowRight, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { Briefcase, GraduationCap, Calendar, ArrowRight } from "lucide-react";
+
+type MyDatum = { count: number; date: string };
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = db.useAuth();
@@ -92,6 +94,37 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
+        {/* <Card>
+          <Chart
+            options={{
+              primaryAxis,
+              secondaryAxes,
+              data: [
+                {
+                  label: "Saved Jobs",
+                  data: [
+                    {
+                      date: "2025-12-01",
+                      count: 10,
+                    },
+                    {
+                      date: "2025-12-02",
+                      count: 12,
+                    },
+                    {
+                      date: "2025-12-03",
+                      count: 15,
+                    },
+                    {
+                      date: "2025-12-04",
+                      count: 29,
+                    },
+                  ],
+                },
+              ],
+            }}
+          />
+        </Card> */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">

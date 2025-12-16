@@ -10,11 +10,11 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user } = db.useAuth();
   const links = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/jobs", label: "Jobs", icon: Briefcase },
-    { href: "/learning", label: "Learning", icon: GraduationCap },
-    { href: "/profile", label: "Profile", icon: User },
-  ];
+    { href: "/", label: "Dashboard", icon: LayoutDashboard, auth: true },
+    { href: "/jobs", label: "Jobs", icon: Briefcase, auth: false },
+    { href: "/learning", label: "Learning", icon: GraduationCap, auth: true },
+    { href: "/profile", label: "Profile", icon: User, auth: true },
+  ].filter((link) => (user ? true : !link.auth));
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
@@ -43,7 +43,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      {Boolean(user) && (
+      {Boolean(user) ? (
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
           <Link
             href="/profile"
@@ -53,6 +53,16 @@ export function Sidebar() {
             Profile
           </Link>
           <SignOutButton />
+        </div>
+      ) : (
+        <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+          <Link
+            href="/login"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-500 transition-all hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+          >
+            <User className="h-4 w-4" />
+            Login
+          </Link>
         </div>
       )}
     </div>

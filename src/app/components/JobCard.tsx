@@ -18,11 +18,14 @@ interface Job {
   title: string;
   company: string;
   status: string;
-  salary?: string | null; // Allow null to match API return types often
+  salary?: string | null;
+  userId: string;
   url?: string | null;
 }
 
 export function JobCard({ job }: { job: Job }) {
+  const { user } = db.useAuth();
+
   function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;
     db.transact(db.tx.jobs[job.id].update({ status: newStatus }));
@@ -39,9 +42,13 @@ export function JobCard({ job }: { job: Job }) {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <Link href={`/jobs/${job.id}`} className="hover:underline">
+            {user?.id === job.userId ? (
+              <Link href={`/jobs/${job.id}`} className="hover:underline">
+                <CardTitle className="text-base">{job.title}</CardTitle>
+              </Link>
+            ) : (
               <CardTitle className="text-base">{job.title}</CardTitle>
-            </Link>
+            )}
             <p className="text-sm text-zinc-500 font-medium">{job.company}</p>
           </div>
           <Badge status={job.status as JobStatus} />
@@ -63,31 +70,33 @@ export function JobCard({ job }: { job: Job }) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <div className="flex items-center gap-2">
-          <select
-            name="status"
-            defaultValue={job.status}
-            className="h-8 rounded bg-transparent text-xs font-medium border-0 focus:ring-0 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1"
-            onChange={handleStatusChange}
-          >
-            <option value="SAVED">Saved</option>
-            <option value="APPLIED">Applied</option>
-            <option value="INTERVIEWING">Interviewing</option>
-            <option value="OFFER">Offer</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-        </div>
+      {user?.id === job.userId && (
+        <CardFooter className="flex justify-between pt-2">
+          <div className="flex items-center gap-2">
+            <select
+              name="status"
+              defaultValue={job.status}
+              className="h-8 rounded bg-transparent text-xs font-medium border-0 focus:ring-0 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1"
+              onChange={handleStatusChange}
+            >
+              <option value="SAVED">Saved</option>
+              <option value="APPLIED">Applied</option>
+              <option value="INTERVIEWING">Interviewing</option>
+              <option value="OFFER">Offer</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
 
-        <Button
-          onClick={handleDelete}
-          variant="ghost"
-          size="sm"
-          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 h-8 w-8"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </CardFooter>
+          <Button
+            onClick={handleDelete}
+            variant="ghost"
+            size="sm"
+            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 h-8 w-8"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
