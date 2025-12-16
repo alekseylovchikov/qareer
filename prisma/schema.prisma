@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  title     String?
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs      JobVacancy[]
+  skills    Skill[]
+  questions Question[]
+}
+
+model JobVacancy {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  url         String?
+  description String?
+  salary      String?
+  status      String    @default("SAVED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  interviews  Interview[]
+}
+
+model Skill {
+  id            String   @id @default(cuid())
+  name          String
+  currentLevel  String? // e.g., Beginner, Intermediate, Advanced
+  targetLevel   String?
+  priority      Int      @default(1) // 1-5
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
+  learningGoals LearningGoal[]
+}
+
+model LearningGoal {
+  id        String   @id @default(cuid())
+  title     String
+  isCompleted Boolean @default(false)
+  deadline  DateTime?
+  
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id])
+}
+
+model Interview {
+  id        String   @id @default(cuid())
+  date      DateTime
+  notes     String?
+  type      String? // Screen, Technical, Behavioral
+  
+  jobId     String
+  job       JobVacancy @relation(fields: [jobId], references: [id])
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String?
+  category  String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
