@@ -213,7 +213,7 @@ export default function JobDetailsPage() {
               <CardTitle>Job Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <JobNotes jobId={job.id} initialNotes={job.notes} />
+              <JobNotes jobId={job.id} initialNotes={job.notes || ""} />
 
               {job.description && (
                 <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
