@@ -1,14 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { SignOutButton } from "./SignOutButton";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  Briefcase,
-  GraduationCap,
-  User,
-  LayoutDashboard,
-} from "lucide-react";
+import { Briefcase, GraduationCap, User, LayoutDashboard } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -48,16 +43,15 @@ export function Sidebar() {
         })}
       </nav>
       <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-            U
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              User
-            </span>
-            <span className="text-xs text-zinc-500">View Profile</span>
-          </div>
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-zinc-500 transition-all hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+        >
+          <User className="h-4 w-4" />
+          Profile
+        </Link>
+        <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <SignOutButton />
         </div>
       </div>
     </div>

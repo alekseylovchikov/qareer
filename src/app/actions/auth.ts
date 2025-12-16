@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -57,4 +57,8 @@ export async function register(
   // Automatically sign in or redirect to login
   // For now, let's just return success so UI can redirect
   return "success";
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/login" });
 }
