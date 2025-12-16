@@ -67,7 +67,7 @@ export default function JobDetailsPage() {
 
   // Sort interviews
   const interviews = (job.interviews || []).sort(
-    (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
   if (!user) {
@@ -121,7 +121,7 @@ export default function JobDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {interviews.map((interview: any) => (
+                {interviews.map((interview) => (
                   <div
                     key={interview.id}
                     className="flex justify-between items-start p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800"
