@@ -12,6 +12,7 @@ import { Input } from "@/app/components/ui/Input";
 import { JobStatus } from "@/lib/types";
 import { JobCard } from "@/app/components/JobCard";
 import { id } from "@instantdb/react";
+import Link from "next/link";
 
 export default function JobsPage() {
   const { user } = db.useAuth();
@@ -50,6 +51,20 @@ export default function JobsPage() {
   }
 
   if (isLoading) return <div className="p-8">Loading jobs...</div>;
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <h2 className="text-xl font-semibold">Please Log In</h2>
+        <p className="text-zinc-500">
+          You need to be logged in to view your dashboard.
+        </p>
+        <Link href="/login" className="text-indigo-600 hover:underline">
+          Go to Login &rarr;
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

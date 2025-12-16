@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/Card";
 import { Input } from "@/app/components/ui/Input";
-import { Trash2, CheckCircle, Circle } from "lucide-react";
+import { Trash2, CheckCircle, Circle, Link } from "lucide-react";
 import { id } from "@instantdb/react";
 
 export default function LearningPage() {
@@ -72,6 +72,20 @@ export default function LearningPage() {
   function handleToggleGoal(goalId: string, currentStatus: boolean) {
     db.transact(
       db.tx.learningGoals[goalId].update({ isCompleted: !currentStatus })
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <h2 className="text-xl font-semibold">Please Log In</h2>
+        <p className="text-zinc-500">
+          You need to be logged in to view your dashboard.
+        </p>
+        <Link href="/login" className="text-indigo-600 hover:underline">
+          Go to Login &rarr;
+        </Link>
+      </div>
     );
   }
 
