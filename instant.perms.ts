@@ -3,7 +3,7 @@ import type { InstantRules } from "@instantdb/react";
 const rules = {
   jobs: {
     allow: {
-      view: "true",
+      view: "auth.id == data.userId",
       create: "auth.id == data.userId",
       update: "auth.id == data.userId",
       delete: "auth.id == data.userId",
@@ -11,7 +11,7 @@ const rules = {
   },
   interviews: {
     allow: {
-      view: "true",
+      view: "auth.id == data.userId",
       create: "auth.id == data.userId",
       update: "auth.id == data.userId",
       delete: "auth.id == data.userId",
@@ -19,7 +19,7 @@ const rules = {
   },
   skills: {
     allow: {
-      view: "true",
+      view: "auth.id == data.userId",
       create: "auth.id == data.userId",
       update: "auth.id == data.userId",
       delete: "auth.id == data.userId",
@@ -27,7 +27,7 @@ const rules = {
   },
   learningGoals: {
     allow: {
-      view: "true",
+      view: "auth.id == data.userId",
       create: "auth.id == data.userId",
       update: "auth.id == data.userId",
       delete: "auth.id == data.userId",
@@ -35,7 +35,7 @@ const rules = {
   },
   profiles: {
     allow: {
-      view: "true",
+      view: "auth.id == data.userId",
       create: "auth.id == data.userId",
       update: "auth.id == data.userId",
       delete: "auth.id == data.userId",
@@ -43,9 +43,9 @@ const rules = {
   },
   $files: {
     allow: {
-      view: "true",
-      create: "auth.id != null", // Allow any authenticated user to upload
-      delete: "auth.id != null", // Allow any authenticated user to delete
+      view: "auth.id != null", // Only authenticated users can view files
+      create: "auth.id != null",
+      delete: "auth.id != null",
     },
   },
 } satisfies InstantRules;
