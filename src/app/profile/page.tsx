@@ -24,7 +24,9 @@ export default function ProfilePage() {
 
   const [isUploading, setIsUploading] = useState(false);
 
-  const profile = data?.profiles?.[0] || {};
+  const profile = data?.profiles?.[0];
+
+  if (!profile) return <div className="p-8">No profile found</div>;
 
   if (authLoading || dataLoading)
     return <div className="p-8">Loading profile...</div>;
@@ -75,7 +77,8 @@ export default function ProfilePage() {
   }
 
   function deleteResume() {
-    if (!profile.id) return;
+    if (!profile?.id) return;
+
     db.transact(
       db.tx.profiles[profile.id].update({ resumeUrl: null, resumeName: null })
     );
