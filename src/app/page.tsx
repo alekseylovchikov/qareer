@@ -133,7 +133,7 @@ export default function DashboardPage() {
                   Next: {new Date(nextInterview.date).toLocaleDateString()}
                 </p>
                 <p className="text-xs text-zinc-500 truncate">
-                  {nextInterview.job?.[0]?.company || "Scheduled"} -{" "}
+                  {nextInterview.job?.company || "Scheduled"} -{" "}
                   {nextInterview.type}
                 </p>
               </div>
