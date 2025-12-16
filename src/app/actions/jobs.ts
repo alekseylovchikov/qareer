@@ -99,3 +99,30 @@ export async function deleteInterview(interviewId: string, jobId: string) {
   });
   revalidatePath(`/jobs/${jobId}`);
 }
+
+export async function updateJobNotes(jobId: string, notes: string) {
+  const session = await auth();
+  if (!session?.user?.email) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const job = await prisma.jobVacancy.findUnique({
+    where: { id: jobId },
+    select: { userId: true },
+  });
+
+  if (!job) throw new Error("Job not found");
+
+  // Get user id from session email to verify
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  });
+  if (!user || job.userId !== user.id) throw new Error("Unauthorized");
+
+  await prisma.jobVacancy.update({
+    where: { id: jobId },
+    data: { notes },
+  });
+
+  revalidatePath(`/jobs/${jobId}`);
+}
