@@ -1,4 +1,6 @@
-import { addJob, getJobs } from "@/app/actions/jobs";
+"use client";
+
+import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 import {
   Card,
@@ -9,12 +11,45 @@ import {
 import { Input } from "@/app/components/ui/Input";
 import { JobStatus } from "@/lib/types";
 import { JobCard } from "@/app/components/JobCard";
+import { id } from "@instantdb/react";
 
-export default async function JobsPage() {
-  const jobs = await getJobs();
+export default function JobsPage() {
+  const { user } = db.useAuth();
+  const { data, isLoading } = db.useQuery({
+    jobs: {
+      $: {
+        where: { userId: user?.id },
+      },
+    },
+  });
 
-  // Group jobs by status or just list them? A simple list for now
-  // We can add client-side "StatusSelect" component later or inline form actions
+  const jobs = data?.jobs || [];
+
+  function addJob(formData: FormData) {
+    if (!user) return;
+    const title = formData.get("title") as string;
+    const company = formData.get("company") as string;
+    const url = formData.get("url") as string;
+    const status = formData.get("status") as string;
+
+    db.transact(
+      db.tx.jobs[id()].update({
+        title,
+        company,
+        url,
+        status: status || "SAVED",
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+    );
+
+    // Reset form? The form will reload, but we might want to clear inputs.
+    // For simplicity with standard form submission, we might accept it "just works" but without clearing inputs it's annoying.
+    // We can use a ref or state, or just let it be for MVP.
+  }
+
+  if (isLoading) return <div className="p-8">Loading jobs...</div>;
 
   return (
     <div className="space-y-8">

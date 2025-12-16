@@ -1,4 +1,6 @@
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { db } from "@/lib/instant";
 import {
   Card,
   CardContent,
@@ -8,69 +10,37 @@ import {
 import Link from "next/link";
 import { Briefcase, GraduationCap, Calendar, ArrowRight } from "lucide-react";
 
-import { auth } from "@/auth";
+export default function DashboardPage() {
+  const { user, isLoading: authLoading } = db.useAuth();
 
-async function getDashboardStats() {
-  const session = await auth();
-  if (!session?.user?.email) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-  if (!user) return null;
-
-  const activeJobs = await prisma.jobVacancy.count({
-    where: {
-      userId: user.id,
-      status: { in: ["APPLIED", "INTERVIEWING", "OFFER"] },
+  const { data, isLoading: dataLoading } = db.useQuery({
+    jobs: {
+      $: {
+        where: { userId: user?.id },
+      },
+    },
+    skills: {
+      $: {
+        where: { userId: user?.id },
+      },
+    },
+    interviews: {
+      $: {
+        where: { userId: user?.id },
+      },
+      job: {},
     },
   });
 
-  const savedJobs = await prisma.jobVacancy.count({
-    where: { userId: user.id, status: "SAVED" },
-  });
+  if (authLoading || dataLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <p className="text-zinc-500 animate-pulse">Loading dashboard...</p>
+      </div>
+    );
+  }
 
-  const skillsInProgress = await prisma.skill.count({
-    where: { userId: user.id }, // Simply count all for now
-  });
-
-  const recentJobs = await prisma.jobVacancy.findMany({
-    where: { userId: user.id },
-    orderBy: { updatedAt: "desc" },
-    take: 3,
-  });
-
-  const upcomingInterviewsCount = await prisma.interview.count({
-    where: {
-      job: { userId: user.id },
-      date: { gte: new Date() },
-    },
-  });
-
-  const nextInterview = await prisma.interview.findFirst({
-    where: {
-      job: { userId: user.id },
-      date: { gte: new Date() },
-    },
-    orderBy: { date: "asc" },
-    include: { job: true },
-  });
-
-  return {
-    activeJobs,
-    savedJobs,
-    skillsInProgress,
-    recentJobs,
-    upcomingInterviewsCount,
-    nextInterview,
-    userName: user.name,
-  };
-}
-
-export default async function DashboardPage() {
-  const stats = await getDashboardStats();
-
-  if (!stats) {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
         <h2 className="text-xl font-semibold">Please Log In</h2>
@@ -84,11 +54,37 @@ export default async function DashboardPage() {
     );
   }
 
+  // Calculate Stats
+  const jobs = data?.jobs || [];
+  const skills = data?.skills || [];
+  const interviews = data?.interviews || [];
+
+  const activeJobs = jobs.filter((j) =>
+    ["APPLIED", "INTERVIEWING", "OFFER"].includes(j.status)
+  ).length;
+  const savedJobs = jobs.filter((j) => j.status === "SAVED").length;
+  const skillsInProgress = skills.length;
+
+  const recentJobs = [...jobs]
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 3);
+
+  const upcomingInterviews = interviews.filter(
+    (i) => new Date(i.date) >= new Date()
+  );
+  const upcomingCount = upcomingInterviews.length;
+  const nextInterview = upcomingInterviews.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  )[0];
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Welcome back, {stats.userName?.split(" ")[0]}
+          Welcome back
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400">
           Here is your job search at a glance.
@@ -104,9 +100,9 @@ export default async function DashboardPage() {
             <Briefcase className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeJobs}</div>
+            <div className="text-2xl font-bold">{activeJobs}</div>
             <p className="text-xs text-zinc-500">
-              {stats.savedJobs} saved jobs waiting
+              {savedJobs} saved jobs waiting
             </p>
           </CardContent>
         </Card>
@@ -118,7 +114,7 @@ export default async function DashboardPage() {
             <GraduationCap className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.skillsInProgress}</div>
+            <div className="text-2xl font-bold">{skillsInProgress}</div>
             <p className="text-xs text-zinc-500">Keep growing!</p>
           </CardContent>
         </Card>
@@ -130,17 +126,15 @@ export default async function DashboardPage() {
             <Calendar className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.upcomingInterviewsCount}
-            </div>
-            {stats.nextInterview ? (
+            <div className="text-2xl font-bold">{upcomingCount}</div>
+            {nextInterview ? (
               <div className="mt-1">
                 <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
-                  Next:{" "}
-                  {new Date(stats.nextInterview.date).toLocaleDateString()}
+                  Next: {new Date(nextInterview.date).toLocaleDateString()}
                 </p>
                 <p className="text-xs text-zinc-500 truncate">
-                  {stats.nextInterview.job.company} - {stats.nextInterview.type}
+                  {nextInterview.job?.[0]?.company || "Scheduled"} -{" "}
+                  {nextInterview.type}
                 </p>
               </div>
             ) : (
@@ -157,7 +151,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.recentJobs.map((job) => (
+              {recentJobs.map((job) => (
                 <div
                   key={job.id}
                   className="flex items-center justify-between border-b border-zinc-100 last:border-0 pb-2 last:pb-0 dark:border-zinc-800"
@@ -175,10 +169,14 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               ))}
+              {recentJobs.length === 0 && (
+                <p className="text-sm text-zinc-500 italic">
+                  No recent activity.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
-
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -189,20 +187,6 @@ export default async function DashboardPage() {
               className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
               <span className="text-sm font-medium">Add New Job</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/learning"
-              className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors dark:bg-zinc-900 dark:hover:bg-zinc-800"
-            >
-              <span className="text-sm font-medium">Update Skills</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/profile"
-              className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors dark:bg-zinc-900 dark:hover:bg-zinc-800"
-            >
-              <span className="text-sm font-medium">Update Resume</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </CardContent>

@@ -1,4 +1,6 @@
-import { getJob, addInterview, deleteInterview } from "@/app/actions/jobs";
+"use client";
+
+import { db } from "@/lib/instant";
 import { JobNotes } from "@/app/components/JobNotes";
 import { Button } from "@/app/components/ui/Button";
 import {
@@ -10,19 +12,63 @@ import {
 import { Input } from "@/app/components/ui/Input";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
+import { id } from "@instantdb/react";
 
-export default async function JobDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const job = await getJob(id);
+export default function JobDetailsPage() {
+  const params = useParams();
+  const jobId = params.id as string;
+  const { user, isLoading: authLoading } = db.useAuth();
 
-  if (!job) {
-    notFound();
+  const { data, isLoading: dataLoading } = db.useQuery({
+    jobs: {
+      $: {
+        where: { id: jobId },
+      },
+      interviews: {}, // Fetch relation via 'jobs' if linked?
+      // Or if interviews is a separate entity and we have links:
+      // In instant.ts: jobs has 'interviews' link.
+      // So 'interviews: {}' inside 'jobs' should work if the link name is 'interviews'
+    },
+  });
+
+  const job = data?.jobs?.[0]; // Get the single job
+
+  if (authLoading || dataLoading)
+    return <div className="p-8">Loading details...</div>;
+  if (!job) return <div className="p-8">Job not found</div>;
+
+  // Handler for adding interview
+  function handleAddInterview(formData: FormData) {
+    if (!user) return;
+    const date = formData.get("date") as string;
+    const type = formData.get("type") as string;
+    const notes = formData.get("notes") as string;
+
+    const interviewId = id();
+    db.transact(
+      db.tx.interviews[interviewId]
+        .update({
+          date,
+          type,
+          notes,
+          userId: user.id,
+        })
+        .link({ job: jobId })
+    );
+    // Note: To see the interview immediately, the query subscription updates automatically.
   }
+
+  function handleDeleteInterview(interviewId: string) {
+    if (confirm("Delete this interview?")) {
+      db.transact(db.tx.interviews[interviewId].delete());
+    }
+  }
+
+  // Sort interviews
+  const interviews = (job.interviews || []).sort(
+    (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
   return (
     <div className="space-y-8">
@@ -61,7 +107,7 @@ export default async function JobDetailsPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {job.interviews.map((interview) => (
+                {interviews.map((interview: any) => (
                   <div
                     key={interview.id}
                     className="flex justify-between items-start p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800"
@@ -81,19 +127,18 @@ export default async function JobDetailsPage({
                         </p>
                       )}
                     </div>
-                    <form
-                      action={async () => {
-                        "use server";
-                        await deleteInterview(interview.id, job.id);
-                      }}
+
+                    <Button
+                      onClick={() => handleDeleteInterview(interview.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-zinc-400 hover:text-red-500 transition-colors p-1"
                     >
-                      <button className="text-zinc-400 hover:text-red-500 transition-colors p-1">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </form>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 ))}
-                {job.interviews.length === 0 && (
+                {interviews.length === 0 && (
                   <p className="text-sm text-zinc-500 italic">
                     No interviews scheduled yet.
                   </p>
@@ -104,8 +149,7 @@ export default async function JobDetailsPage({
                 <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-4">
                   Add Upcoming Interview
                 </h4>
-                <form action={addInterview} className="space-y-4">
-                  <input type="hidden" name="jobId" value={job.id} />
+                <form action={handleAddInterview} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-zinc-500">

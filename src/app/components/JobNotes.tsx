@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { updateJobNotes } from "@/app/actions/jobs";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 
 interface JobNotesProps {
@@ -14,14 +14,17 @@ export function JobNotes({ jobId, initialNotes }: JobNotesProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    setNotes(initialNotes || "");
+  }, [initialNotes]);
+
   async function handleSave() {
     setIsSaving(true);
     try {
-      await updateJobNotes(jobId, notes);
+      db.transact(db.tx.jobs[jobId].update({ notes }));
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to save notes", error);
-      alert("Failed to save notes");
     } finally {
       setIsSaving(false);
     }

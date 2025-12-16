@@ -10,12 +10,9 @@
     "db": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "@types/bcryptjs": "^2.4.6",
-    "bcryptjs": "^3.0.3",
+    "@instantdb/react": "^0.22.88",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
-    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
@@ -26,7 +23,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { updateJobStatus, deleteJob } from "@/app/actions/jobs";
+import { db } from "@/lib/instant";
 import { Button } from "@/app/components/ui/Button";
 import {
   Card,
@@ -11,25 +11,28 @@ import {
 } from "@/app/components/ui/Card";
 import { JobStatus } from "@/lib/types";
 import { ExternalLink, Trash2 } from "lucide-react";
-import { useTransition } from "react";
 import Link from "next/link";
 
-// Assuming Job type structure based on usage in page.tsx
-// Ideally we should import the Job type from Prisma client or types file if available.
-// For now, defining a local interface matching what we saw or using 'any' temporarily if unsure,
-// but better to be type safe.
-// Looking at page.tsx: job.id, job.title, job.company, job.status, job.salary, job.url
 interface Job {
   id: string;
   title: string;
   company: string;
-  status: string; // Prismo enum is usually string at runtime, but we cast to JobStatus
-  salary?: string | null;
+  status: string;
+  salary?: string | null; // Allow null to match API return types often
   url?: string | null;
 }
 
 export function JobCard({ job }: { job: Job }) {
-  const [isPending, startTransition] = useTransition();
+  function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newStatus = e.target.value;
+    db.transact(db.tx.jobs[job.id].update({ status: newStatus }));
+  }
+
+  function handleDelete() {
+    if (confirm("Delete this job?")) {
+      db.transact(db.tx.jobs[job.id].delete());
+    }
+  }
 
   return (
     <Card className="relative group">
@@ -65,14 +68,8 @@ export function JobCard({ job }: { job: Job }) {
           <select
             name="status"
             defaultValue={job.status}
-            disabled={isPending}
             className="h-8 rounded bg-transparent text-xs font-medium border-0 focus:ring-0 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1"
-            onChange={(e) => {
-              const newStatus = e.target.value as JobStatus;
-              startTransition(async () => {
-                await updateJobStatus(job.id, newStatus);
-              });
-            }}
+            onChange={handleStatusChange}
           >
             <option value="SAVED">Saved</option>
             <option value="APPLIED">Applied</option>
@@ -82,19 +79,14 @@ export function JobCard({ job }: { job: Job }) {
           </select>
         </div>
 
-        <form
-          action={async () => {
-            await deleteJob(job.id);
-          }}
+        <Button
+          onClick={handleDelete}
+          variant="ghost"
+          size="sm"
+          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 h-8 w-8"
         >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 h-8 w-8"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </form>
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </CardFooter>
     </Card>
   );
