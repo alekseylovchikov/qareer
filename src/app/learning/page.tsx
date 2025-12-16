@@ -9,8 +9,9 @@ import {
   CardTitle,
 } from "@/app/components/ui/Card";
 import { Input } from "@/app/components/ui/Input";
-import { Trash2, CheckCircle, Circle, Link } from "lucide-react";
+import { Trash2, CheckCircle, Circle } from "lucide-react";
 import { id } from "@instantdb/react";
+import Link from "next/link";
 
 export default function LearningPage() {
   const { user, isLoading: authLoading } = db.useAuth();
@@ -194,7 +195,7 @@ export default function LearningPage() {
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   Goals
                 </h4>
-                {skill.learningGoals?.map((goal: any) => (
+                {skill.learningGoals?.map((goal) => (
                   <div key={goal.id} className="flex items-start gap-2 group">
                     <button
                       onClick={() =>
