@@ -33,11 +33,29 @@ async function getDashboardStats() {
     take: 3,
   });
 
+  const upcomingInterviewsCount = await prisma.interview.count({
+    where: {
+      job: { userId: user.id },
+      date: { gte: new Date() },
+    },
+  });
+
+  const nextInterview = await prisma.interview.findFirst({
+    where: {
+      job: { userId: user.id },
+      date: { gte: new Date() },
+    },
+    orderBy: { date: "asc" },
+    include: { job: true },
+  });
+
   return {
     activeJobs,
     savedJobs,
     skillsInProgress,
     recentJobs,
+    upcomingInterviewsCount,
+    nextInterview,
     userName: user.name,
   };
 }
@@ -105,8 +123,22 @@ export default async function DashboardPage() {
             <Calendar className="h-4 w-4 text-zinc-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-zinc-500">No interviews scheduled</p>
+            <div className="text-2xl font-bold">
+              {stats.upcomingInterviewsCount}
+            </div>
+            {stats.nextInterview ? (
+              <div className="mt-1">
+                <p className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                  Next:{" "}
+                  {new Date(stats.nextInterview.date).toLocaleDateString()}
+                </p>
+                <p className="text-xs text-zinc-500 truncate">
+                  {stats.nextInterview.job.company} - {stats.nextInterview.type}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500">No interviews scheduled</p>
+            )}
           </CardContent>
         </Card>
       </div>
