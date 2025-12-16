@@ -31,6 +31,7 @@ model JobVacancy {
   company     String
   url         String?
   description String?
+  notes       String?   // User's private notes
   salary      String?
   status      String    @default("SAVED")
   createdAt   DateTime @default(now())

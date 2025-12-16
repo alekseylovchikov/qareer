@@ -1,4 +1,5 @@
 import { getJob, addInterview, deleteInterview } from "@/app/actions/jobs";
+import { JobNotes } from "@/app/components/JobNotes";
 import { Button } from "@/app/components/ui/Button";
 import {
   Card,
@@ -168,10 +169,18 @@ export default async function JobDetailsPage({
               <CardTitle>Job Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Placeholder for Job Description or other notes */}
-              <div className="text-sm text-zinc-500">
-                {job.description || "No description added."}
-              </div>
+              <JobNotes jobId={job.id} initialNotes={job.notes} />
+
+              {job.description && (
+                <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                  <h4 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">
+                    Description from Posting
+                  </h4>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-4 hover:line-clamp-none transition-all cursor-pointer">
+                    {job.description}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
