@@ -50,9 +50,7 @@ export function Sidebar() {
           <User className="h-4 w-4" />
           Profile
         </Link>
-        <div className="pt-4 mt-4 border-t border-zinc-100 dark:border-zinc-800">
-          <SignOutButton />
-        </div>
+        <SignOutButton />
       </div>
     </div>
   );
